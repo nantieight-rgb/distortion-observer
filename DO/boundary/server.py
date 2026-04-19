@@ -28,6 +28,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import TYPE_CHECKING
 
+from ..core.models import Node, Edge as _Edge
+
 from .kernel_api import (graph_dict, distortion_dict, health_dict,
                          flow_dict, status_dict)
 from .timeline_api import (snapshots_dict, diffs_dict,
@@ -41,6 +43,37 @@ if TYPE_CHECKING:
     from ..core.kernel import DOKernel
 
 DEFAULT_PORT = 7700
+
+
+def _parse_node(body: dict) -> Node:
+    node_id = body.get("node_id") or body.get("id")
+    if not node_id:
+        raise ValueError("node_id is required")
+    return Node(
+        node_id=node_id,
+        label=body.get("label", node_id),
+        avg_ms=float(body.get("avg_ms", 0.0)),
+        async_rate=float(body.get("async_rate", 0.0)),
+        burst_count=int(body.get("burst_count", 0)),
+        depth=int(body.get("depth", 0)),
+        subsystem=body.get("subsystem"),
+    )
+
+
+def _parse_edge(body: dict) -> _Edge:
+    edge_id = body.get("edge_id") or body.get("id")
+    source_id = body.get("source_id") or body.get("source")
+    target_id = body.get("target_id") or body.get("target")
+    if not all([edge_id, source_id, target_id]):
+        raise ValueError("edge_id, source_id, target_id are required")
+    return _Edge(
+        edge_id=edge_id,
+        source_id=source_id,
+        target_id=target_id,
+        flow_count=int(body.get("flow_count", 0)),
+        async_flag=bool(body.get("async_flag", False)),
+        weight=float(body.get("weight", 1.0)),
+    )
 
 
 def _make_handler(kernel: "DOKernel", storage: DOStorage):
@@ -73,7 +106,13 @@ def _make_handler(kernel: "DOKernel", storage: DOStorage):
                         "GET /do/predict/flow",
                         "GET /do/predict/suggestions",
                         "GET /do/predict/all",
-                        "POST /do/storage/save  body:{label,type}",
+                        "POST /do/storage/save       body:{label,type}",
+                        "POST /do/ingest/node        body:{node_id,label,avg_ms,...}",
+                        "POST /do/ingest/edge        body:{edge_id,source_id,target_id,flow_count}",
+                        "POST /do/ingest/remove/node body:{node_id}",
+                        "POST /do/ingest/remove/edge body:{edge_id}",
+                        "POST /do/ingest/clear",
+                        "POST /do/ingest/tick        force recompute",
                     ],
                 },
                 "/do/status":               lambda: status_dict(kernel),
@@ -121,7 +160,49 @@ def _make_handler(kernel: "DOKernel", storage: DOStorage):
                 except Exception:
                     pass
 
-            if path == "/do/storage/save":
+            if path == "/do/ingest/node":
+                try:
+                    node = _parse_node(body)
+                    kernel.ingest_node(node)
+                    self._send_json(200, {"ok": True, "node_id": node.node_id})
+                except Exception as e:
+                    self._send_json(400, {"error": str(e)})
+
+            elif path == "/do/ingest/edge":
+                try:
+                    edge = _parse_edge(body)
+                    kernel.ingest_edge(edge)
+                    self._send_json(200, {"ok": True, "edge_id": edge.edge_id})
+                except Exception as e:
+                    self._send_json(400, {"error": str(e)})
+
+            elif path == "/do/ingest/remove/node":
+                node_id = body.get("node_id", "")
+                if not node_id:
+                    self._send_json(400, {"error": "node_id required"})
+                else:
+                    kernel.remove_node(node_id)
+                    self._send_json(200, {"ok": True, "removed": node_id})
+
+            elif path == "/do/ingest/remove/edge":
+                edge_id = body.get("edge_id", "")
+                if not edge_id:
+                    self._send_json(400, {"error": "edge_id required"})
+                else:
+                    kernel.structure.edges.pop(edge_id, None)
+                    self._send_json(200, {"ok": True, "removed": edge_id})
+
+            elif path == "/do/ingest/clear":
+                kernel.structure.nodes.clear()
+                kernel.structure.edges.clear()
+                self._send_json(200, {"ok": True, "cleared": True})
+
+            elif path == "/do/ingest/tick":
+                # Force a computation tick (useful after batch ingest)
+                snap = kernel.tick()
+                self._send_json(200, {"ok": True, "snapshot_id": snap.snapshot_id})
+
+            elif path == "/do/storage/save":
                 label = body.get("label", "")
                 save_type = body.get("type", "state")
                 try:
