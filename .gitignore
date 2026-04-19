@@ -1,0 +1,25 @@
+# Build artifacts
+dist/
+build/
+*.spec.bak
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Runtime data
+do_data/
+*.json.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

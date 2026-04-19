@@ -1,0 +1,6 @@
+# Distortion Observer — Runtime dependencies
+# All stdlib except these:
+# (none required for core functionality)
+
+# Optional: for build only
+# pyinstaller>=6.0
