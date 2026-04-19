@@ -1,7 +1,10 @@
 # Distortion Observer
 
-**Structural health monitoring OS for software systems.**  
-Detects architectural distortions — before they become bugs.
+**DO は、構造上に定義されたエネルギー場 E(x,t) の歪み・流れ・蓄積・位相を観測し、FlowDot として可視化する "構造物理エンジン" です。**
+
+DO は load / flow / burst / loop / depth / async をエネルギー物理として統一的に扱います。  
+FlowDot はエネルギー場の状態（量・勾配・流動・位相・閉路・変化率）を 2D/3D にリアルタイム可視化する HUD です。  
+Distortion はエネルギーの偏り・変化・閉路・位相ズレを統合した構造歪みの指標です。
 
 ![Health 85%](https://img.shields.io/badge/demo-healthy%2085%25-44ff88?style=flat-square)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)
@@ -10,30 +13,44 @@ Detects architectural distortions — before they become bugs.
 
 ---
 
-## What is it?
+## Energy Model
 
-Distortion Observer (DO) observes the **structure** of your software — not the logs, not the code — and detects where your system is under stress *before* it fails.
+DO の全概念は、たった一つのエネルギー場から導出される。
 
-It models your system as a living organism:
-- **Nodes** = subsystems / events / components
-- **Edges** = causal relationships / data flow
-- **FlowDots** = blood flow (live throughput)
-- **Distortion** = structural stress (6-axis model)
+```
+E(x,t)   — スカラー場（構造上の位置 x、時間 t）
+```
 
-> Most debuggers tell you *what broke*.  
-> DO tells you *what's about to break*.
+| 概念 | 物理定義 | 意味 |
+|------|---------|------|
+| load  | `E(x,t)` | エネルギー量（ポテンシャル） |
+| depth | `∇E(x,t)` | ポテンシャル勾配 |
+| flow  | `F = −k∇E` | エネルギーの移動状態 |
+| burst | `∂E/∂t` | エネルギーの時間微分 |
+| loop  | `∮F·dl` | エネルギー閉路 |
+| async | `\|ϕᵢ − ϕⱼ\|` | 非同期による位相ズレ |
+
+**Distortion（歪み）:**
+
+```
+D(x,t) = w_d‖∇E‖ + w_b|∂E/∂t| + w_l|Γloop| + w_a·AsyncScore
+```
 
 ---
 
-## Features
+## FlowDot = 構造物理 HUD
 
-| Phase | Feature |
-|-------|---------|
-| Core | 6-axis distortion model (Depth / Load / Async / Burst / Loop / Flow) |
-| View | 2D Causal Chain View + 3D Flow View (dual panel) |
-| Flow | Animated FlowDots + DistortionRings + FlowAggregator |
-| Analyzer | AI future prediction — hotspots, load spikes, improvement suggestions |
-| Boundary | Local HTTP API (`http://127.0.0.1:7700`) for external tool integration |
+FlowDot は UI ではなく、エネルギー場をリアルタイムに可視化する HUD。
+
+| 視覚要素 | 物理量 |
+|---------|--------|
+| サイズ | `E` — ポテンシャル量 |
+| 色 | `‖∇E‖` — 勾配歪み |
+| 速度 | `‖F‖` — 流れの強さ |
+| 揺らぎ | `async` — 位相歪み |
+| 脈動 | `\|∂E/∂t\|` — 時間歪み |
+| 軌道歪み | `Γloop` — 閉路歪み |
+| 光度 | `D` — 歪み総量 |
 
 ---
 
@@ -42,58 +59,62 @@ It models your system as a living organism:
 ### Run from source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/distortion-observer
+git clone https://github.com/nantieight-rgb/distortion-observer
 cd distortion-observer
 python do_launcher.py
 ```
 
-Python 3.10+ required. No external dependencies needed for core features.
+Python 3.10+ required. No external dependencies.
 
 ### Download pre-built exe
 
-→ See [Releases](../../releases) for the latest `DistortionObserver.exe`
-
----
-
-## HTTP Boundary API
-
-When running, DO exposes a local read-only API:
-
-```
-GET http://127.0.0.1:7700/              → endpoint list
-GET http://127.0.0.1:7700/do/status     → health & distortion
-GET http://127.0.0.1:7700/do/graph      → structure (nodes / edges / cycles)
-GET http://127.0.0.1:7700/do/predict/all → AI future predictions
-GET http://127.0.0.1:7700/do/stream/poll → live state (poll every N ms)
-```
-
-Use `--no-boundary` flag to disable. Use `--port N` to change port.
-
----
-
-## 6-Axis Distortion Model
-
-```
-Depth    — dependency chain too deep
-Load     — processing time exceeding baseline
-Async    — excessive async entanglement
-Burst    — spike density too high
-Loop     — circular dependency pressure
-Flow     — throughput saturation or reversal risk
-```
-
-Each axis scored 0.0–1.0. Combined into a global Distortion score.  
-Health = `100 - f(distortion)`, shown as green / yellow / red.
+→ [Releases](../../releases) から `DistortionObserver-v1.0.0-windows.zip` をダウンロード  
+→ 解凍して `DistortionObserver.exe` を実行
 
 ---
 
 ## Modes
 
-| Mode | What you see |
-|------|-------------|
-| **Read** | Current structure, live FlowDots |
-| **Analyze** | Distortion heatmap + AI Insight Panel (future hotspots) |
-| **Predict** | Ghost Flow (future blood flow) + improvement suggestions |
+| Mode | 表示内容 |
+|------|---------|
+| **Read** | 現在のエネルギー場・FlowDot |
+| **Analyze** | 歪みヒートマップ + AI Insight Panel |
+| **Predict** | Ghost Flow（未来血流）+ 改善提案 |
+
+---
+
+## HTTP Boundary API
+
+起動中、DO はローカル HTTP API を公開する（読み取り専用）:
+
+```
+GET  http://127.0.0.1:7700/              — エンドポイント一覧
+GET  http://127.0.0.1:7700/do/status     — 健康・歪み状態
+GET  http://127.0.0.1:7700/do/graph      — 構造（ノード・エッジ・サイクル）
+GET  http://127.0.0.1:7700/do/predict/all — AI 未来予測
+GET  http://127.0.0.1:7700/do/stream/poll — ライブ状態（ポーリング）
+
+POST http://127.0.0.1:7700/do/ingest/node  — ノード追加/更新
+POST http://127.0.0.1:7700/do/ingest/edge  — エッジ追加/更新
+POST http://127.0.0.1:7700/do/ingest/clear — 構造リセット
+POST http://127.0.0.1:7700/do/ingest/tick  — 強制再計算
+```
+
+`--no-boundary` で無効化、`--port N` でポート変更。
+
+---
+
+## Use Cases
+
+構造（ノードとエッジ）を持つものなら何でも観測できる。
+
+- ゲームエンジンのサブシステム依存
+- マイクロサービス間の API 呼び出し
+- OS プロセス・サービスの依存グラフ
+- React コンポーネントツリー
+- CI/CD パイプライン
+- 医療センサーの臓器間依存
+- 地震断層の応力伝播
 
 ---
 
@@ -101,31 +122,22 @@ Health = `100 - f(distortion)`, shown as green / yellow / red.
 
 ```
 DO/
-├── core/        — Kernel, Structure, Distortion, Health, Flow, Timeline, Buses
-├── view/        — 2D Canvas, 3D Canvas, FlowLayer, InsightPanel, Workspace
-└── boundary/    — HTTP Server, Storage, Kernel/Timeline/Analyzer APIs
+├── core/      — Kernel, Energy Model, Distortion, Health, Timeline, Buses
+├── view/      — 2D Canvas, 3D Canvas, FlowLayer (HUD), InsightPanel
+└── boundary/  — HTTP Server, Ingest API, Storage, Analyzer API
 ```
 
-DO Core has zero UI dependencies. It can run headless and be observed via Boundary API.
-
----
-
-## Use Cases
-
-- **Game engine debugging** — visualize subsystem coupling and load before shipping
-- **Microservice health** — map services as nodes, calls as edges
-- **Refactoring guidance** — let AI suggest which modules to decouple first
-- **Live monitoring** — poll `/do/stream/poll` from any external dashboard
+DO Core はゼロ UI 依存。Boundary API 経由で外部ツールから観測可能。
 
 ---
 
 ## License
 
-MIT — free to use, modify, and distribute.
+MIT
 
 ---
 
 ## Author
 
 Toyohiro Arimoto  
-Built with [Claude Code](https://claude.ai/code)
+Built with [Claude Code](https://claude.ai/code) & Copilot
