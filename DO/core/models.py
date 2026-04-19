@@ -13,12 +13,16 @@ import time
 class Node:
     node_id: str
     label: str = ""
-    avg_ms: float = 0.0       # average processing time (ms)
-    async_rate: float = 0.0   # 0.0 ~ 1.0
-    burst_count: int = 0      # sudden spikes
-    depth: int = 0            # call stack depth
+    avg_ms: float = 0.0       # average processing time (ms) — legacy fallback
+    async_rate: float = 0.0   # 0.0 ~ 1.0 — legacy fallback
+    burst_count: int = 0      # sudden spikes — legacy fallback
+    depth: int = 0            # call stack depth — legacy fallback
     subsystem: str = "default"
     timestamp: float = field(default_factory=time.time)
+    # v2: Energy model fields (B-plan: caller provides E directly)
+    energy: float = 0.0       # E(x,t) — potential energy at this node
+    async_score: float = 0.0  # AsyncScore — phase shift magnitude
+    burst: float = 0.0        # ∂E/∂t — energy time derivative
 
     def to_dict(self) -> dict:
         return {
@@ -30,6 +34,9 @@ class Node:
             "depth": self.depth,
             "subsystem": self.subsystem,
             "timestamp": self.timestamp,
+            "energy": self.energy,
+            "async_score": self.async_score,
+            "burst": self.burst,
         }
 
 

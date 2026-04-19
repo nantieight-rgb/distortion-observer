@@ -16,16 +16,17 @@ from DO.view import DOWorkspace
 def _load_demo(kernel: DOKernel):
     """Sample game-like structure for demo."""
     nodes = [
-        Node("GameLoop",      label="GameLoop",       avg_ms=16.0, depth=0),
-        Node("InputManager",  label="InputManager",   avg_ms=2.0,  depth=1),
-        Node("PhysicsEngine", label="PhysicsEngine",  avg_ms=8.0,  depth=1, async_rate=0.3),
-        Node("Renderer",      label="Renderer",       avg_ms=12.0, depth=1),
-        Node("UIManager",     label="UIManager",      avg_ms=45.0, depth=2, burst_count=8),
-        Node("Inventory",     label="Inventory",      avg_ms=30.0, depth=3, burst_count=12),
-        Node("EventBus",      label="EventBus",       avg_ms=1.0,  depth=2, async_rate=0.9),
-        Node("AudioManager",  label="AudioManager",   avg_ms=3.0,  depth=2),
-        Node("AIController",  label="AIController",   avg_ms=22.0, depth=2, async_rate=0.6),
-        Node("SaveSystem",    label="SaveSystem",     avg_ms=120.0,depth=3, burst_count=3),
+        # v2: energy=E(x,t), async_score=phase shift, burst=∂E/∂t
+        Node("GameLoop",      label="GameLoop",       avg_ms=16.0,  depth=0, energy=0.10),
+        Node("InputManager",  label="InputManager",   avg_ms=2.0,   depth=1, energy=0.05),
+        Node("PhysicsEngine", label="PhysicsEngine",  avg_ms=8.0,   depth=1, energy=0.20, async_score=0.3),
+        Node("Renderer",      label="Renderer",       avg_ms=12.0,  depth=1, energy=0.25),
+        Node("UIManager",     label="UIManager",      avg_ms=45.0,  depth=2, energy=0.55, burst=0.18, burst_count=8),
+        Node("Inventory",     label="Inventory",      avg_ms=30.0,  depth=3, energy=0.40, burst=0.10, burst_count=12),
+        Node("EventBus",      label="EventBus",       avg_ms=1.0,   depth=2, energy=0.08, async_score=0.85),
+        Node("AudioManager",  label="AudioManager",   avg_ms=3.0,   depth=2, energy=0.06),
+        Node("AIController",  label="AIController",   avg_ms=22.0,  depth=2, energy=0.35, async_score=0.60),
+        Node("SaveSystem",    label="SaveSystem",     avg_ms=120.0, depth=3, energy=0.82, burst=0.45, burst_count=3),
     ]
     edges = [
         Edge("e1",  "GameLoop",     "InputManager",   flow_count=60),

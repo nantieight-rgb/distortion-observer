@@ -37,6 +37,22 @@ def health_color(score: float) -> str:
     return distortion_color(1.0 - score / 100.0)
 
 
+def gradient_color(grad_e: float) -> str:
+    """‖∇E‖ → color: 0.0=cyan, 0.5=green, 1.0=red."""
+    t = max(0.0, min(1.0, grad_e))
+    if t < 0.5:
+        s = t * 2.0
+        r = int(68 * s)
+        g = int(204 + (255 - 204) * s)
+        b = int(255 - (255 - 136) * s)
+    else:
+        s = (t - 0.5) * 2.0
+        r = int(68 + (255 - 68) * s)
+        g = int(255 - (255 - 68) * s)
+        b = int(136 - 136 * s)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 def alpha_hex(color: str, alpha: float) -> str:
     """Simulate alpha by blending with BG (#0d0d0f)."""
     r = int(color[1:3], 16)

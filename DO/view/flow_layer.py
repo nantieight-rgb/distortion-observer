@@ -132,21 +132,31 @@ class FlowState:
         # Remove stale dots
         self._dots = [d for d in self._dots if d.edge_id in edge_ids]
 
-        # Sync dots to edge flow counts
-        from .colors import distortion_color
+        # Sync dots to edge flow counts — v2 energy model
+        from .colors import gradient_color
         for eid, edge in structure.edges.items():
             if self._aggregator.should_aggregate(edge.flow_count):
-                # Remove individual dots, aggregator handles it
                 self._dots = [d for d in self._dots if d.edge_id != eid]
                 continue
 
             current = [d for d in self._dots if d.edge_id == eid]
             target = min(MAX_DOTS_PER_EDGE, max(1, edge.flow_count // 15))
             while len(current) < target:
-                dist = dm.edge_flow_distortion.get(eid, 0) if dm else 0
-                color = distortion_color(dist)
-                speed = 0.10 + edge.flow_count / 400.0
-                size = 2.5 + edge.flow_count / 60.0
+                # ── v2: physical quantities from energy model ──────────────
+                grad_e = dm.edge_flow_distortion.get(eid, 0.0) if dm else 0.0
+                src = structure.nodes.get(edge.source_id)
+                tgt = structure.nodes.get(edge.target_id)
+                e_avg = 0.0
+                if src and tgt:
+                    from ..core.distortion import _resolve_energy
+                    e_avg = (_resolve_energy(src) + _resolve_energy(tgt)) / 2.0
+
+                # Color = gradient_color(‖∇E‖)
+                color = gradient_color(grad_e)
+                # Speed ∝ ‖F‖ = k·‖∇E‖  (k=0.15)
+                speed = 0.08 + 0.15 * grad_e + edge.flow_count / 600.0
+                # Size ∝ E(x,t)
+                size = 2.0 + 3.0 * e_avg
                 dot = FlowDot(eid, speed=speed, color=color, size=size)
                 self._dots.append(dot)
                 current.append(dot)

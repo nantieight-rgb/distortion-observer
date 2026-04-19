@@ -56,7 +56,10 @@ def _parse_node(body: dict) -> Node:
         async_rate=float(body.get("async_rate", 0.0)),
         burst_count=int(body.get("burst_count", 0)),
         depth=int(body.get("depth", 0)),
-        subsystem=body.get("subsystem"),
+        subsystem=body.get("subsystem", "default"),
+        energy=float(body.get("energy", 0.0)),
+        async_score=float(body.get("async_score", 0.0)),
+        burst=float(body.get("burst", 0.0)),
     )
 
 
