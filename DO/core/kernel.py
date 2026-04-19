@@ -19,13 +19,11 @@ class DOKernel:
         self.causal = CausalGraph(self.structure)
         self.timeline = Timeline()
 
-        # Buses
         self.selection_bus = SelectionBus()
         self.time_bus = TimeBus()
         self.filter_bus = FilterBus()
         self.flow_bus = FlowBus()
 
-        # Latest computed state
         self._distortion: DistortionMap | None = None
         self._health: HealthReport | None = None
         self._flow: FlowModel | None = None
@@ -50,9 +48,16 @@ class DOKernel:
     def tick(self) -> Snapshot:
         """Recompute all models and record a timeline snapshot."""
         self.causal.compute()
-        self._distortion = compute_distortion(self.structure, self.causal)
-        self._health = compute_health(self._distortion)
+
+        # Flow first — distortion uses flow for propagated layer
         self._flow = compute_flow(self.structure)
+
+        # Pass prev distortion for dynamics (V) calculation
+        prev_dm = self._distortion
+        self._distortion = compute_distortion(
+            self.structure, self.causal, self._flow, prev_dm
+        )
+        self._health = compute_health(self._distortion)
 
         # Emit distortion pulses for high-distortion nodes
         if self._distortion:

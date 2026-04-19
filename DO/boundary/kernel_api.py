@@ -21,6 +21,9 @@ def graph_dict(kernel: "DOKernel") -> dict:
                 "burst_count": n.burst_count,
                 "depth": n.depth,
                 "subsystem": n.subsystem,
+                "energy": n.energy,
+                "async_score": n.async_score,
+                "burst": n.burst,
             }
             for nid, n in s.nodes.items()
         },
@@ -45,16 +48,9 @@ def distortion_dict(kernel: "DOKernel") -> dict:
     return {
         "available": True,
         "global": dm.global_score.to_dict(),
+        "system": dm.system.to_dict(),
         "nodes": {
-            nid: {
-                "total": round(ds.total, 4),
-                "depth": round(ds.depth, 4),
-                "load": round(ds.load, 4),
-                "async": round(ds.async_, 4),
-                "burst": round(ds.burst, 4),
-                "loop": round(ds.loop, 4),
-                "flow": round(ds.flow, 4),
-            }
+            nid: ds.to_dict()
             for nid, ds in dm.node_scores.items()
         },
         "edges": {
@@ -80,20 +76,19 @@ def flow_dict(kernel: "DOKernel") -> dict:
         "total_flow": fm.total_flow,
         "avg_pressure": round(fm.avg_pressure, 3),
         "nodes": {
-            nid: {
-                "flow_count": m.flow_count,
-                "avg_duration": round(m.avg_duration, 3),
-                "async_rate": round(m.async_rate, 3),
-                "noise_level": round(m.noise_level, 3),
-                "pressure": round(m.pressure, 3),
-            }
-            for nid, m in fm.node_flows.items()
+            nid: nf.to_dict()
+            for nid, nf in fm.node_flows.items()
+        },
+        "edges": {
+            eid: round(v, 4)
+            for eid, v in fm.edge_flows.items()
         },
     }
 
 
 def status_dict(kernel: "DOKernel") -> dict:
     h = kernel.health
+    dm = kernel.distortion
     return {
         "running": True,
         "node_count": len(kernel.structure.nodes),
@@ -101,5 +96,6 @@ def status_dict(kernel: "DOKernel") -> dict:
         "health_score": kernel.health_score(),
         "health_level": h.level if h else "unknown",
         "distortion_total": round(kernel.distortion_total(), 4),
+        "system_distortion": round(dm.system.score, 4) if dm else 0.0,
         "cycle_count": len(kernel.causal.cycles),
     }
