@@ -6,6 +6,8 @@ DO は load / flow / burst / loop / depth / async をエネルギー物理とし
 FlowDot はエネルギー場の状態（量・勾配・流動・位相・閉路・変化率）を 2D/3D にリアルタイム可視化する HUD です。  
 Distortion はエネルギーの偏り・変化・閉路・位相ズレを統合した構造歪みの指標です。
 
+![v1.0.0](https://img.shields.io/badge/stable-v1.0.0-44ff88?style=flat-square)
+![v2 in progress](https://img.shields.io/badge/v2-energy%20model%20in%20progress-ffcc44?style=flat-square)
 ![Health 85%](https://img.shields.io/badge/demo-healthy%2085%25-44ff88?style=flat-square)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)
 ![Platform Windows](https://img.shields.io/badge/platform-Windows-lightgrey?style=flat-square)
