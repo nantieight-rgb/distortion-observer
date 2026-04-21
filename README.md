@@ -1,4 +1,51 @@
-# Distortion Observer
+# **DO（Distortion Observer）Minimal README（Origin 用）**
+
+DO（Distortion Observer）は、  
+**構造の歪みだけを観測する最小 OS**です。
+
+本 README は DO の **Origin（起点）** を示すための  
+最小構成の公開記録です。
+
+---
+
+## **1. Minimal Syntax**
+
+```
+D-DEPTH: 0.1
+D-LOAD: 0.3
+D-ASYNC: 0.2
+D-BURST: 0.0
+D-LOOP: 0.1
+D-FLOW: 0.4
+```
+
+---
+
+## **2. Origin**
+
+- Qiita Origin 記事  
+  → *（https://qiita.com/ToyohroArimoto/items/57aafa7761eb314ff489）*
+
+- Initial Commit Hash  
+  ```
+  （43816d64257cb7affe522d25b4fa99e7aaa23069）
+  ```
+
+---
+
+## **3. Update Policy**
+
+Origin 証明のため、  
+**大幅な書き換えは行いません。**
+
+---
+
+## **4. Origin Declaration**
+
+- 初期定義者：有本 豊拡（ToyohiroArimoto）  
+- 初期仕様：本 README および初期コミット  
+
+---# Distortion Observer
 
 **DO は、構造上に定義されたエネルギー場 E(x,t) の歪み・流れ・蓄積・位相を観測し、FlowDot として可視化する "構造物理エンジン" です。**
 
